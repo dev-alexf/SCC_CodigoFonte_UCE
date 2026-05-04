@@ -18,7 +18,7 @@
 
 ## Sobre o Sistema
 
-Sistema web de **controle de serviços prestados e cobranças** para um escritório de contabilidade de pequeno porte, desenvolvido como projeto da UCE de Engenharia de Software II.
+Sistema web de **controle de serviços prestados e cobranças** para um escritório de contabilidade de pequeno porte, desenvolvido como projeto da UCE
 
 ### Funcionalidades Implementadas
 
