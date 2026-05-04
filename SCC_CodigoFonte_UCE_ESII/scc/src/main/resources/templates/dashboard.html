@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Dashboard - SCC</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">
+        <span>&#128202;</span>
+        <span class="nav-title">Escritorio de Contabilidade</span>
+    </div>
+    <div class="nav-links">
+        <a th:href="@{/dashboard}"     class="nav-link active">&#127968; Dashboard</a>
+        <a th:href="@{/clientes}"      class="nav-link">&#128101; Clientes</a>
+        <a th:href="@{/inadimplencia}" class="nav-link">&#128308; Inadimplencia</a>
+        <a th:href="@{/relatorios}" sec:authorize="hasRole('ADMIN')" class="nav-link">&#128200; Relatorios</a>
+    </div>
+    <div class="nav-user">
+        <span class="nav-username">
+            &#128100;
+            <span sec:authentication="name">usuario</span>
+            <span sec:authorize="hasRole('ADMIN')" class="badge badge-blue">Admin</span>
+            <span sec:authorize="hasRole('FUNCIONARIO')" class="badge badge-gray">Func.</span>
+        </span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button class="btn btn-sm btn-outline" type="submit">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="page-content">
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Visao geral do escritorio</p>
+        </div>
+        <a th:href="@{/clientes/novo}" class="btn btn-primary">+ Novo Cliente</a>
+    </div>
+
+    <div class="cards-grid">
+        <div class="summary-card card-yellow">
+            <span class="sc-icon">&#128203;</span>
+            <span class="sc-label">A Cobrar</span>
+            <span class="sc-value" th:text="${#numbers.formatDecimal(totalACobrar,1,'POINT',2,'COMMA')}">0,00</span>
+        </div>
+        <div class="summary-card card-orange">
+            <span class="sc-icon">&#9203;</span>
+            <span class="sc-label">Pendente</span>
+            <span class="sc-value" th:text="${#numbers.formatDecimal(totalPendente,1,'POINT',2,'COMMA')}">0,00</span>
+        </div>
+        <div class="summary-card card-green">
+            <span class="sc-icon">&#9989;</span>
+            <span class="sc-label">Total Pago</span>
+            <span class="sc-value" th:text="${#numbers.formatDecimal(totalPago,1,'POINT',2,'COMMA')}">0,00</span>
+        </div>
+        <div class="summary-card card-blue">
+            <span class="sc-icon">&#128176;</span>
+            <span class="sc-label">Recebido no Mes</span>
+            <span class="sc-value" th:text="${#numbers.formatDecimal(totalMes,1,'POINT',2,'COMMA')}">0,00</span>
+        </div>
+    </div>
+
+    <div class="card mb-2">
+        <p class="card-title">Acesso Rapido</p>
+        <div class="gap-row">
+            <a th:href="@{/clientes}"      class="btn btn-ghost">&#128101; Ver Clientes</a>
+            <a th:href="@{/inadimplencia}" class="btn btn-ghost">
+                &#128308; Inadimplencia
+                <span th:if="${qtdInadimplentes > 0}" class="badge badge-red"
+                      th:text="${qtdInadimplentes}"></span>
+            </a>
+            <a th:href="@{/relatorios}" sec:authorize="hasRole('ADMIN')" class="btn btn-ghost">
+                &#128200; Relatorios
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${qtdInadimplentes > 0}" class="alert alert-warn">
+        &#9888;&#65039; Ha <strong th:text="${qtdInadimplentes}">0</strong>
+        servico(s) pendente(s) ha mais de 30 dias.
+        <a th:href="@{/inadimplencia}">Ver inadimplencia &rarr;</a>
+    </div>
+</div>
+</body>
+</html>

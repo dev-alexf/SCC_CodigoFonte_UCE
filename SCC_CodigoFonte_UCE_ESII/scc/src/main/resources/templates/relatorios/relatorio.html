@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Relatorios - SCC</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><span>&#128202;</span><span class="nav-title">Escritorio de Contabilidade</span></div>
+    <div class="nav-links">
+        <a th:href="@{/dashboard}"     class="nav-link">&#127968; Dashboard</a>
+        <a th:href="@{/clientes}"      class="nav-link">&#128101; Clientes</a>
+        <a th:href="@{/inadimplencia}" class="nav-link">&#128308; Inadimplencia</a>
+        <a th:href="@{/relatorios}"    class="nav-link active">&#128200; Relatorios</a>
+    </div>
+    <div class="nav-user">
+        <span class="nav-username">&#128100; <span sec:authentication="name">usuario</span></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button class="btn btn-sm btn-outline" type="submit">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="page-content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Relatorios de Faturamento</h1>
+            <p class="page-subtitle">Filtros por periodo, cliente e status</p>
+        </div>
+        <button onclick="window.print()" class="btn btn-ghost">Imprimir</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-2">
+        <p class="card-title">Filtros</p>
+        <form th:action="@{/relatorios}" method="get">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Cliente</label>
+                    <select name="clienteId" class="form-control">
+                        <option value="">Todos os clientes</option>
+                        <option th:each="c : ${clientes}"
+                                th:value="${c.id}"
+                                th:text="${c.nomeCompleto}"
+                                th:selected="${clienteId == c.id}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">Todos</option>
+                        <option th:each="st : ${statusList}"
+                                th:value="${st.name()}"
+                                th:text="${st.descricao}"
+                                th:selected="${status != null && status.name() == st.name()}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data Inicio</label>
+                    <input type="date" name="inicio" class="form-control" th:value="${inicio}"/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" name="fim" class="form-control" th:value="${fim}"/>
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top:0">
+                <a th:href="@{/relatorios}" class="btn btn-ghost">Limpar</a>
+                <button type="submit" class="btn btn-primary">Gerar Relatorio</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resultado -->
+    <div th:if="${filtrou}">
+        <div class="cards-grid mb-2">
+            <div class="summary-card card-blue">
+                <span class="sc-label">Total de servicos</span>
+                <span class="sc-value" th:text="${resultados.size()}"></span>
+            </div>
+            <div class="summary-card card-green">
+                <span class="sc-label">Valor total</span>
+                <span class="sc-value"
+                      th:text="'R$ ' + ${#numbers.formatDecimal(totalValor,1,'POINT',2,'COMMA')}"></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Data</th><th>Cliente</th><th>Servico</th>
+                        <th>Valor</th><th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${resultados.empty}">
+                        <td colspan="5" class="table-empty">Nenhum resultado para os filtros selecionados.</td>
+                    </tr>
+                    <tr th:each="s : ${resultados}">
+                        <td th:text="${#temporals.format(s.data,'dd/MM/yyyy')}"></td>
+                        <td>
+                            <a th:href="@{/clientes/{id}(id=${s.cliente.id})}"
+                               th:text="${s.cliente.nomeCompleto}"
+                               style="color:#1A3A5C;font-weight:600"></a>
+                        </td>
+                        <td th:text="${s.descricao}"></td>
+                        <td th:text="'R$ ' + ${#numbers.formatDecimal(s.valor,1,'POINT',2,'COMMA')}"></td>
+                        <td>
+                            <span th:switch="${s.status.name()}">
+                                <span th:case="'A_COBRAR'" class="badge badge-yellow">A Cobrar</span>
+                                <span th:case="'PENDENTE'" class="badge badge-orange">Pendente</span>
+                                <span th:case="'PAGO'"     class="badge badge-green">Pago</span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr th:if="${!resultados.empty}" style="background:#EEF5FB;font-weight:700">
+                        <td colspan="3" style="text-align:right;padding-right:1rem">TOTAL</td>
+                        <td th:text="'R$ ' + ${#numbers.formatDecimal(totalValor,1,'POINT',2,'COMMA')}"></td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${!filtrou}" class="card" style="text-align:center;padding:3rem">
+        <p style="font-size:2rem">&#128202;</p>
+        <p style="color:#888;margin-top:.5rem">
+            Selecione os filtros acima e clique em <strong>Gerar Relatorio</strong>.
+        </p>
+    </div>
+</div>
+
+<style>
+@media print {
+  .navbar, form, button, .btn { display:none!important; }
+  .page-content { max-width:100%; }
+}
+</style>
+</body>
+</html>

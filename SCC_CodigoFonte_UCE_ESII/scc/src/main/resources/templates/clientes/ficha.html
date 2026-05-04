@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Ficha - SCC</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><span>&#128202;</span><span class="nav-title">Escritorio de Contabilidade</span></div>
+    <div class="nav-links">
+        <a th:href="@{/dashboard}"     class="nav-link">&#127968; Dashboard</a>
+        <a th:href="@{/clientes}"      class="nav-link active">&#128101; Clientes</a>
+        <a th:href="@{/inadimplencia}" class="nav-link">&#128308; Inadimplencia</a>
+        <a th:href="@{/relatorios}" sec:authorize="hasRole('ADMIN')" class="nav-link">&#128200; Relatorios</a>
+    </div>
+    <div class="nav-user">
+        <span class="nav-username">&#128100; <span sec:authentication="name">usuario</span></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button class="btn btn-sm btn-outline" type="submit">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="page-content">
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+    <div th:if="${erro}"    class="alert alert-error"   th:text="${erro}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${cliente.nomeCompleto}"></h1>
+            <p class="page-subtitle">
+                <span th:if="${cliente.tipo == 'PJ'}" class="badge badge-blue">PJ</span>
+                <span th:if="${cliente.tipo == 'PF'}" class="badge badge-gray">PF</span>
+                &nbsp;Cadastrado em
+                <span th:text="${#temporals.format(cliente.dataCadastro,'dd/MM/yyyy')}"></span>
+            </p>
+        </div>
+        <div class="gap-row">
+            <a th:href="@{/clientes/{id}/editar(id=${cliente.id})}" class="btn btn-ghost">Editar</a>
+            <a th:href="@{/clientes}" class="btn btn-ghost">&larr; Clientes</a>
+        </div>
+    </div>
+
+    <!-- Dados + Resumo Financeiro -->
+    <div class="two-col mb-2">
+        <div class="card">
+            <p class="card-title">Dados do Cliente</p>
+            <ul class="info-list">
+                <li><span class="info-label">CPF/CNPJ:</span>
+                    <span th:text="${cliente.cpf != null && !cliente.cpf.isBlank() ? cliente.cpf : '-'}"></span></li>
+                <li><span class="info-label">Telefone:</span>
+                    <span th:text="${cliente.telefone != null && !cliente.telefone.isBlank() ? cliente.telefone : '-'}"></span></li>
+                <li><span class="info-label">E-mail:</span>
+                    <span th:text="${cliente.email != null && !cliente.email.isBlank() ? cliente.email : '-'}"></span></li>
+                <li><span class="info-label">GOV.BR:</span>
+                    <span th:text="${cliente.contaGov != null && !cliente.contaGov.isBlank() ? cliente.contaGov : '-'}"></span></li>
+                <li th:if="${cliente.observacoes != null && !cliente.observacoes.isBlank()}">
+                    <span class="info-label">Obs.:</span>
+                    <span th:text="${cliente.observacoes}"></span>
+                </li>
+            </ul>
+        </div>
+        <div class="card">
+            <p class="card-title">Resumo Financeiro</p>
+            <ul class="info-list">
+                <li>
+                    <span class="info-label">Total em servicos:</span>
+                    <strong th:text="'R$ ' + ${#numbers.formatDecimal(totalGasto,1,'POINT',2,'COMMA')}"></strong>
+                </li>
+                <li>
+                    <span class="info-label">Saldo devedor:</span>
+                    <strong style="color:#C62828"
+                            th:text="'R$ ' + ${#numbers.formatDecimal(saldoDevedor,1,'POINT',2,'COMMA')}"></strong>
+                </li>
+                <li>
+                    <span class="info-label">Qtd. servicos:</span>
+                    <span th:text="${servicos.size()}"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Novo Servico -->
+    <div class="card mb-2">
+        <p class="card-title">+ Registrar Novo Servico</p>
+        <form th:action="@{/clientes/{id}/servicos/salvar(id=${cliente.id})}" method="post">
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label class="form-label">Descricao *</label>
+                    <input type="text" name="descricao" class="form-control"
+                           placeholder="Ex.: Declaracao IRPF 2026" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor (R$) *</label>
+                    <input type="number" name="valor" class="form-control"
+                           step="0.01" min="0.01" placeholder="0.00" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data *</label>
+                    <input type="date" name="data" class="form-control" th:value="${hoje}" required/>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">Registrar Servico</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Servicos -->
+    <div class="card">
+        <p class="card-title">Servicos Prestados</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Data</th><th>Descricao</th><th>Valor</th>
+                    <th>Total Pago</th><th>Saldo</th><th>Status</th>
+                    <th class="text-right">Acoes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${servicos.empty}">
+                    <td colspan="7" class="table-empty">Nenhum servico cadastrado.</td>
+                </tr>
+                <tr th:each="s : ${servicos}">
+                    <td th:text="${#temporals.format(s.data,'dd/MM/yyyy')}"></td>
+                    <td th:text="${s.descricao}"></td>
+                    <td th:text="'R$ ' + ${#numbers.formatDecimal(s.valor,1,'POINT',2,'COMMA')}"></td>
+                    <td th:text="'R$ ' + ${#numbers.formatDecimal(s.totalPago,1,'POINT',2,'COMMA')}"></td>
+                    <td>
+                        <span th:if="${s.saldoDevedor.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                              style="color:#C62828;font-weight:600"
+                              th:text="'R$ ' + ${#numbers.formatDecimal(s.saldoDevedor,1,'POINT',2,'COMMA')}"></span>
+                        <span th:if="${s.saldoDevedor.compareTo(T(java.math.BigDecimal).ZERO) == 0}"
+                              style="color:#2E7D32;font-weight:600">Quitado</span>
+                    </td>
+                    <td>
+                        <span th:switch="${s.status.name()}">
+                            <span th:case="'A_COBRAR'" class="badge badge-yellow">A Cobrar</span>
+                            <span th:case="'PENDENTE'" class="badge badge-orange">Pendente</span>
+                            <span th:case="'PAGO'"     class="badge badge-green">Pago</span>
+                        </span>
+                    </td>
+                    <td class="text-right">
+                        <div class="gap-row" style="justify-content:flex-end;flex-wrap:wrap">
+                            <!-- Alterar status -->
+                            <form th:action="@{/clientes/servicos/{sid}/status(sid=${s.id})}" method="post"
+                                  style="display:flex;gap:.3rem;align-items:center">
+                                <input type="hidden" name="clienteId" th:value="${cliente.id}"/>
+                                <select name="status" class="form-control"
+                                        style="padding:.3rem .5rem;font-size:.8rem;height:auto;width:auto">
+                                    <option th:each="st : ${statusList}"
+                                            th:value="${st.name()}"
+                                            th:text="${st.descricao}"
+                                            th:selected="${st == s.status}"></option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-ghost">OK</button>
+                            </form>
+                            <!-- Pagamento -->
+                            <button class="btn btn-sm btn-primary"
+                                    th:if="${s.status.name() != 'PAGO'}"
+                                    th:onclick="|abrirPagamento('${s.id}','${cliente.id}','${#numbers.formatDecimal(s.saldoDevedor,1,2)}')|">
+                                Pagamento
+                            </button>
+                            <!-- Excluir -->
+                            <form th:action="@{/clientes/servicos/{sid}/excluir(sid=${s.id})}" method="post"
+                                  onsubmit="return confirm('Excluir este servico?')">
+                                <input type="hidden" name="clienteId" th:value="${cliente.id}"/>
+                                <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Pagamento -->
+<dialog id="modalPagamento">
+    <div class="modal-header">
+        <span class="modal-title">Registrar Pagamento</span>
+        <button class="modal-close" onclick="document.getElementById('modalPagamento').close()">X</button>
+    </div>
+    <div class="modal-body">
+        <form id="formPagamento" method="post">
+            <input type="hidden" name="clienteId" id="pagClienteId"/>
+            <div class="form-group">
+                <label class="form-label">Valor Recebido (R$) *</label>
+                <input type="number" name="valor" id="pagValor" class="form-control"
+                       step="0.01" min="0.01" required/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data do Pagamento *</label>
+                <input type="date" name="data" id="pagData" class="form-control" required/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Observacao</label>
+                <input type="text" name="observacao" class="form-control"
+                       placeholder="Ex.: Pix, dinheiro, deposito..."/>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost"
+                        onclick="document.getElementById('modalPagamento').close()">Cancelar</button>
+                <button type="submit" class="btn btn-success">Confirmar Pagamento</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+function abrirPagamento(servicoId, clienteId, saldo) {
+    document.getElementById('formPagamento').action = '/clientes/servicos/' + servicoId + '/pagamento';
+    document.getElementById('pagClienteId').value = clienteId;
+    document.getElementById('pagValor').value = saldo.replace(',','.');
+    document.getElementById('pagData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('modalPagamento').showModal();
+}
+</script>
+</body>
+</html>

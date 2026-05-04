@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Clientes - SCC</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><span>&#128202;</span><span class="nav-title">Escritorio de Contabilidade</span></div>
+    <div class="nav-links">
+        <a th:href="@{/dashboard}"     class="nav-link">&#127968; Dashboard</a>
+        <a th:href="@{/clientes}"      class="nav-link active">&#128101; Clientes</a>
+        <a th:href="@{/inadimplencia}" class="nav-link">&#128308; Inadimplencia</a>
+        <a th:href="@{/relatorios}" sec:authorize="hasRole('ADMIN')" class="nav-link">&#128200; Relatorios</a>
+    </div>
+    <div class="nav-user">
+        <span class="nav-username">&#128100; <span sec:authentication="name">usuario</span></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button class="btn btn-sm btn-outline" type="submit">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="page-content">
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Clientes</h1>
+            <p class="page-subtitle" th:text="${clientes.size()} + ' cliente(s)'"></p>
+        </div>
+        <a th:href="@{/clientes/novo}" class="btn btn-primary">+ Novo Cliente</a>
+    </div>
+
+    <form th:action="@{/clientes}" method="get" class="card mb-2" style="padding:1rem 1.5rem">
+        <div class="search-bar">
+            <input type="text" name="busca" class="form-control"
+                   placeholder="Buscar por nome, CPF ou email..."
+                   th:value="${busca}" autofocus/>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+            <a th:href="@{/clientes}" class="btn btn-ghost">Limpar</a>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Tipo</th><th>Nome</th><th>CPF / CNPJ</th>
+                    <th>Telefone</th><th>Email</th><th class="text-right">Acoes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${clientes.empty}">
+                    <td colspan="6" class="table-empty">
+                        Nenhum cliente encontrado.
+                        <a th:href="@{/clientes/novo}">Cadastrar agora &rarr;</a>
+                    </td>
+                </tr>
+                <tr th:each="c : ${clientes}">
+                    <td>
+                        <span th:if="${c.tipo == 'PJ'}" class="badge badge-blue">PJ</span>
+                        <span th:if="${c.tipo == 'PF'}" class="badge badge-gray">PF</span>
+                    </td>
+                    <td>
+                        <a th:href="@{/clientes/{id}(id=${c.id})}"
+                           th:text="${c.nomeCompleto}" style="font-weight:600;color:#1A3A5C"></a>
+                    </td>
+                    <td th:text="${c.cpf != null && !c.cpf.isBlank() ? c.cpf : '-'}"></td>
+                    <td th:text="${c.telefone != null && !c.telefone.isBlank() ? c.telefone : '-'}"></td>
+                    <td th:text="${c.email != null && !c.email.isBlank() ? c.email : '-'}"></td>
+                    <td class="text-right">
+                        <div class="gap-row" style="justify-content:flex-end">
+                            <a th:href="@{/clientes/{id}(id=${c.id})}" class="btn btn-sm btn-ghost">Ficha</a>
+                            <a th:href="@{/clientes/{id}/editar(id=${c.id})}" class="btn btn-sm btn-ghost">Editar</a>
+                            <form th:action="@{/clientes/{id}/excluir(id=${c.id})}" method="post"
+                                  onsubmit="return confirm('Excluir este cliente?')">
+                                <button class="btn btn-sm btn-danger" type="submit">Excluir</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

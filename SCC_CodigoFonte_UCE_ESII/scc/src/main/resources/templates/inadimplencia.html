@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Inadimplencia - SCC</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><span>&#128202;</span><span class="nav-title">Escritorio de Contabilidade</span></div>
+    <div class="nav-links">
+        <a th:href="@{/dashboard}"     class="nav-link">&#127968; Dashboard</a>
+        <a th:href="@{/clientes}"      class="nav-link">&#128101; Clientes</a>
+        <a th:href="@{/inadimplencia}" class="nav-link active">&#128308; Inadimplencia</a>
+        <a th:href="@{/relatorios}" sec:authorize="hasRole('ADMIN')" class="nav-link">&#128200; Relatorios</a>
+    </div>
+    <div class="nav-user">
+        <span class="nav-username">&#128100; <span sec:authentication="name">usuario</span></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button class="btn btn-sm btn-outline" type="submit">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="page-content">
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Controle de Inadimplencia</h1>
+            <p class="page-subtitle">Servicos com status Pendente ha mais de 30 dias</p>
+        </div>
+    </div>
+
+    <div th:if="${inadimplentes.empty}" class="card" style="text-align:center;padding:3rem">
+        <p style="font-size:2.5rem">&#9989;</p>
+        <p style="font-weight:600;color:#2E7D32;margin-top:.5rem">
+            Nenhum cliente inadimplente no momento!</p>
+    </div>
+
+    <div th:if="${!inadimplentes.empty}" class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Cliente</th><th>Servico</th>
+                    <th>Valor Total</th><th>Total Pago</th><th>Saldo</th>
+                    <th>Dias Pendente</th><th class="text-right">Acoes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${inadimplentes}">
+                    <td>
+                        <a th:href="@{/clientes/{id}(id=${s.cliente.id})}"
+                           th:text="${s.cliente.nomeCompleto}"
+                           style="font-weight:600;color:#1A3A5C"></a>
+                    </td>
+                    <td th:text="${s.descricao}"></td>
+                    <td th:text="'R$ ' + ${#numbers.formatDecimal(s.valor,1,'POINT',2,'COMMA')}"></td>
+                    <td th:text="'R$ ' + ${#numbers.formatDecimal(s.totalPago,1,'POINT',2,'COMMA')}"></td>
+                    <td style="color:#C62828;font-weight:600"
+                        th:text="'R$ ' + ${#numbers.formatDecimal(s.saldoDevedor,1,'POINT',2,'COMMA')}"></td>
+                    <td>
+                        <span class="badge badge-red" th:text="${s.diasPendente} + ' dias'"></span>
+                    </td>
+                    <td class="text-right">
+                        <div class="gap-row" style="justify-content:flex-end">
+                            <a th:href="@{/clientes/{id}(id=${s.cliente.id})}"
+                               class="btn btn-sm btn-ghost">Ver Ficha</a>
+                            <form th:action="@{/inadimplencia/marcar-pago/{id}(id=${s.id})}" method="post"
+                                  onsubmit="return confirm('Marcar como Pago?')">
+                                <button type="submit" class="btn btn-sm btn-success">Marcar Pago</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
