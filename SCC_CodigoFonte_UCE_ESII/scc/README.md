@@ -12,7 +12,7 @@
 | Vítor Hugo de Paula Malta | 26145 |
 | João Pedro Martins Garcia | 26171 |
 
-**Professora:** Débora Pelicano Diniz
+**Professora:** Daniel
 
 ---
 
